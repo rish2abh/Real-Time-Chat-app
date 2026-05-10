@@ -115,7 +115,7 @@ const ChatSidebar = ({
 
       <div className="people-summary">
         <h3>People available</h3>
-        <span>{usersByStatus.length}</span>
+        <span>{usersByStatus.filter((availableUser) => availableUser.status === "online").length}</span>
       </div>
     </aside>
   );
