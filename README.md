@@ -1,134 +1,269 @@
-# Chat App
+# 💬 Chat App
 
-This repository contains a full-stack chat application with a React client and an Express + Socket.IO server.
+A full-stack **real-time chat application** built for speed and simplicity. Supports private and group conversations, live typing indicators, online presence, and file sharing — all powered by WebSockets.
 
-## What is implemented
+> **Stack:** React · Node.js · Express · Socket.IO · MongoDB · Cloudinary
 
-- User registration and login with JWT authentication
-- Protected API routes using auth middleware
-- One-to-one and group chat creation
-- Message persistence using MongoDB for socket-based chat messages
-- Real-time communication with Socket.IO
-- Online/offline status updates for users
-- Typing indicator events for active chats
-- File upload support using Cloudinary
-- User listing and online user listing endpoints
-- Request validation using Joi
 
-## Features
 
-### Authentication
+<!-- Uncomment and update once you have screenshots -->
+<!--
+| Login | Chat Window | Group Chat |
+|---|---|---|
+| ![Login](./screenshots/login.png) | ![Chat](./screenshots/chat.png) | ![Group](./screenshots/group.png) |
+-->
 
-- Register new users with `name`, `email`, and `password`
-- Login users and return a JWT token
-- Protect API routes with `Bearer <token>` authorization
+---
 
-### Chats
+## ✨ Features at a glance
 
-- Create one-to-one chats
-- Create group chats with a `groupName` and participant list
-- Fetch chats for the authenticated user
-- Delete chats owned by the authenticated user
+| Feature | Details |
+|---|---|
+| 🔐 Auth | Register / Login with JWT — token verified on every API call and socket connection |
+| 💬 One-to-one chat | Start a private conversation with any registered user |
+| 👥 Group chat | Create named groups with multiple participants |
+| ⚡ Real-time | Messages delivered instantly via Socket.IO and persisted to MongoDB |
+| 🟢 Online status | Live online / offline presence across all participants |
+| ✍️ Typing indicator | See when the other person is typing |
+| 😀 Emoji support | Built-in emoji picker in the message composer |
+| 📎 File sharing | Images render inline — other files show a download card |
+| 🗑️ Chat deletion | Remove any chat you are a participant of |
 
-### Messages
+---
 
-- Send and retrieve chat messages via Socket.IO
-- Persist messages to MongoDB with sender, chat ID, text, and optional file URL
-- Support real-time message delivery across chat participants
+## 🛠️ Tech stack
 
-### File uploads
+| Layer | Technology | Why |
+|---|---|---|
+| Frontend | React 18 + custom hooks | Clean state separation per feature |
+| Backend | Node.js + Express | Lightweight, fast REST API |
+| Realtime | Socket.IO 4 | Bidirectional events with room-based broadcasting |
+| Database | MongoDB + Mongoose | Flexible document storage for chats and messages |
+| Auth | JWT + bcryptjs | Stateless auth, secure password hashing |
+| File storage | Cloudinary | Managed image and file hosting |
+| Validation | Joi | Schema-based request validation |
+| Testing | Jest + Supertest | Backend unit and integration tests |
 
-- Upload files from the client to Cloudinary
-- Return a `fileUrl`, `publicId`, and `resourceType` for uploaded content
+---
 
-### Realtime events
+## 📁 Project structure
 
-Socket events implemented in the server:
+```
+chat-app/
+├── client/                         # React frontend
+│   └── src/
+│       ├── api/
+│       │   └── client.js           # All API calls in one place (fetch wrapper)
+│       ├── components/
+│       │   ├── AuthPage.jsx         # Login / Register screen
+│       │   ├── ChatSidebar.jsx      # Chat list + new group creation
+│       │   ├── ChatWindow.jsx       # Active chat header and layout shell
+│       │   ├── Composer.jsx         # Message input, emoji picker, file upload
+│       │   ├── MessageBubble.jsx    # Individual message (text / image / file)
+│       │   ├── MessageList.jsx      # Scrollable message feed
+│       │   └── OnlineUsers.jsx      # User list with live presence dots
+│       └── hooks/
+│           ├── useSocket.js         # Socket connection + all event listeners
+│           ├── useChats.js          # Chat list state, create, delete
+│           └── useMessages.js       # Message state, send, file upload
+│
+└── server/                         # Express + Socket.IO backend
+    └── src/
+        ├── config/                  # MongoDB, CORS, Cloudinary config
+        ├── controllers/             # Route handlers (auth, chats, messages, upload, users)
+        ├── middleware/              # JWT auth, multer file handling, Joi validation
+        ├── models/                  # Mongoose schemas — User, Chat, Message
+        ├── routes/                  # Express route definitions
+        ├── socket/                  # Socket.IO server + event handlers
+        ├── utils/                   # asyncHandler, API response helpers
+        └── validations/             # Joi schemas for request bodies
+```
 
-- `connection` - authenticates socket connections using JWT
-- `chat:join` - join a socket room for a specific chat
-- `message:send` - send a new chat message
-- `message:receive` - receive a new chat message
-- `typing` - broadcast typing state to chat participants
-- `user:status` - notify participants when a user's online/offline state changes
+---
 
-## API Endpoints
+## 🔌 API reference
 
-### Auth
+### Auth — no token required
 
-- `POST /api/auth/register`
-  - Body: `{ name, email, password }`
-- `POST /api/auth/login`
-  - Body: `{ email, password }`
+| Method | Endpoint | Body |
+|---|---|---|
+| POST | `/api/auth/register` | `{ name, email, password }` |
+| POST | `/api/auth/login` | `{ email, password }` |
 
-### Chat
+### Chats — `Authorization: Bearer <token>` required
 
-- `POST /api/chat/group`
-  - Headers: `Authorization: Bearer <token>`
-  - Body: `{ groupName, users: [userId, ...] }`
-- `POST /api/chat/send`
-  - Body: `{ text }`
-  - This route uses in-memory storage for basic message sending in the REST API path.
-- `POST /api/chat/upload`
-  - Multipart form-data with field `file`
-  - Uploads content to Cloudinary
-- `GET /api/chat/messages`
-  - Returns the current in-memory message list
+| Method | Endpoint | Body |
+|---|---|---|
+| GET | `/api/chats` | — |
+| POST | `/api/chats` | `{ participantId }` |
+| POST | `/api/chats/group` | `{ groupName, users: [userId, ...] }` |
+| DELETE | `/api/chats/:chatId` | — |
 
-### Users
+### Messages — auth required
 
-- `GET /api/users`
-  - Returns all users except the currently authenticated user
-- `GET /api/users/online`
-  - Returns all online users except the currently authenticated user
+| Method | Endpoint |
+|---|---|
+| GET | `/api/messages/:chatId` |
 
-## Environment variables
+### Users — auth required
 
-The server requires the following environment variables:
+| Method | Endpoint |
+|---|---|
+| GET | `/api/users` |
+| GET | `/api/users/online` |
 
-- `MONGO_URI` - MongoDB connection string
-- `JWT_SECRET` - JWT signing secret
-- `CLOUD_NAME` or `CLOUDINARY_CLOUD_NAME`
-- `CLOUD_API_KEY` or `CLOUDINARY_API_KEY`
-- `CLOUD_API_SECRET` or `CLOUDINARY_API_SECRET`
+### Upload — auth required
 
-## Setup and run
+| Method | Endpoint | Body |
+|---|---|---|
+| POST | `/api/upload` | `multipart/form-data`, field name: `file` |
 
-### Server
+---
 
-1. Open `server` folder
-2. Install dependencies
-   - `npm install`
-3. Copy `.env.example` to `.env` and update values
-   - `cp .env.example .env`
-   - or create `.env` manually with the required values
-4. Start the server
-   - `npm start`
-   - or `npm run start:dev` to use `nodemon`
-5. Run backend tests
-   - `npm test`
+## 📡 Socket events
 
-### Client
+### Client → Server
 
-1. Open `client` folder
-2. Install dependencies
-   - `npm install`
-3. Start the React app
-   - `npm start`
+| Event | Payload | What it does |
+|---|---|---|
+| `chat:join` | `chatId` | Join a room to receive messages |
+| `leave` | `chatId` | Leave a chat room |
+| `message:send` | `{ chatId, message, file? }` | Send a message (text or file URL) |
+| `typing` | `{ chatId, isTyping }` | Tell others you are / aren't typing |
 
-## Notes
+### Server → Client
 
-- The server uses Express and Socket.IO for realtime chat functionality.
-- Chat and message storage are backed by MongoDB models defined in `server/src/models`.
-- File uploads are forwarded to Cloudinary and require valid Cloudinary credentials.
-- Socket authentication uses the same JWT token returned by the login endpoint.
+| Event | Payload | What it means |
+|---|---|---|
+| `message:receive` | Message object | New message in a joined chat |
+| `message:error` | `{ error }` | Message failed to send |
+| `typing` | `{ chatId, senderId, isTyping }` | Someone else is typing |
+| `status` | `{ userId, status }` | A user came online or went offline |
+| `chat:created` | Chat object | You were added to a new group chat |
 
-## Project structure
+---
 
-- `client/` - React frontend application
-- `server/` - Express API server
-  - `server/src/routes` - API route definitions
-  - `server/src/controllers` - business logic for auth, chat, message, upload, and users
-  - `server/src/socket` - Socket.IO realtime event handling
-  - `server/src/models` - MongoDB schemas for users, chats, and messages
-  - `server/src/config` - database and Cloudinary configuration
+## 🗄️ Data models
+
+```js
+// User
+{ name, email, password, status: "online" | "offline" }
+
+// Chat
+{ participants: [userId], isGroup: Boolean, groupName: String }
+
+// Message
+{ chatId, senderId, message: String, file: String | null, createdAt }
+```
+
+---
+
+## 🚀 Getting started
+
+### Prerequisites
+
+- Node.js 18+
+- MongoDB running locally or a [MongoDB Atlas](https://www.mongodb.com/atlas) cluster
+- [Cloudinary](https://cloudinary.com) account (free tier is fine)
+
+### 1. Clone the repo
+
+```bash
+git clone https://github.com/your-username/chat-app.git
+cd chat-app
+```
+
+### 2. Start the server
+
+```bash
+cd server
+npm install
+cp .env.example .env      # then fill in your values
+npm run start:dev
+```
+
+### 3. Start the client
+
+```bash
+cd client
+npm install
+npm start
+```
+
+App runs at `http://localhost:3000`. API runs at `http://localhost:5000`.
+
+### 4. Run tests
+
+```bash
+cd server
+npm test
+```
+
+---
+
+## ⚙️ Environment variables
+
+`server/.env` — copy from `.env.example`:
+
+```env
+MONGO_URI=mongodb://localhost:27017/chat-app
+JWT_SECRET=your_strong_secret_here
+CLOUD_NAME=your_cloudinary_cloud_name
+CLOUD_API_KEY=your_cloudinary_api_key
+CLOUD_API_SECRET=your_cloudinary_api_secret
+PORT=5000
+```
+
+`client/.env.local` — optional, defaults to localhost:
+
+```env
+REACT_APP_API_URL=http://localhost:5000
+```
+
+> ⚠️ Never commit your real `.env` file — it is already in `.gitignore`.
+
+---
+
+## 🔐 How auth works
+
+```
+Login → server returns JWT (7 days)
+      → stored in localStorage
+      → sent as: Authorization: Bearer <token>  (every API request)
+      → sent as: socket.handshake.auth.token    (socket connection)
+      → server middleware verifies before any request or event is processed
+```
+
+---
+
+## ⚡ How real-time messaging works
+
+```
+Open a chat   → client emits chat:join
+              → server verifies participant, adds socket to room
+
+Send message  → client emits message:send
+              → server saves to MongoDB
+              → server emits message:receive to all room sockets
+
+Close all tabs → disconnect fires
+              → server checks remaining sockets for that user
+              → if none left → marks offline, notifies participants
+                (multi-tab handled correctly)
+```
+
+---
+
+## 🗺️ Planned improvements
+
+- [ ] Message pagination (currently loads last 50)
+- [ ] Read receipts
+- [ ] Push notifications
+- [ ] Message search
+- [ ] Production deployment
+
+---
+
+## 📄 License
+
+MIT
